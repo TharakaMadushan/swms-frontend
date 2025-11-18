@@ -20,19 +20,43 @@ export const LoginForm: React.FC = () => {
   } = useForm<LoginRequest>();
 
   const onSubmit = async (data: LoginRequest) => {
-    const result = await login(data);
+    console.log('🚀 Form submitted!');
+    console.log('📧 Email:', data.email);
+    console.log('🔑 Password length:', data.password?.length);
     
-    if (result.meta.requestStatus === 'fulfilled') {
-      const user = result.payload as any;
+    try {
+      console.log('⏳ Calling login function...');
+      const result = await login(data);
       
-      if (user.isTempPassword) {
-        navigate(ROUTES.CHANGE_PASSWORD);
+      console.log('📦 Login result:', result);
+      console.log('📦 Result status:', result.status);
+      console.log('📦 Result payload:', result.payload);
+      
+      // Check for the correct property structure
+      if (result.status === 'fulfilled' && result.payload) {
+        const user = result.payload;
+        console.log('✅ Login successful!');
+        console.log('👤 User:', user);
+        
+        if (user.isTempPassword) {
+          console.log('🔄 Navigating to change password...');
+          navigate(ROUTES.CHANGE_PASSWORD);
+        } else {
+          const from = (location.state as any)?.from?.pathname || ROUTES.DASHBOARD;
+          console.log('🔄 Navigating to:', from);
+          navigate(from, { replace: true });
+        }
       } else {
-        const from = (location.state as any)?.from?.pathname || ROUTES.DASHBOARD;
-        navigate(from, { replace: true });
+        console.error('❌ Login failed!');
+        console.error('Status:', result.status);
+        console.error('Error:', result.error);
       }
+    } catch (err) {
+      console.error('💥 Exception during login:', err);
     }
   };
+
+  console.log('🔄 LoginForm render - isLoading:', isLoading, 'error:', error);
 
   return (
     <div className="w-full max-w-md">
@@ -44,7 +68,13 @@ export const LoginForm: React.FC = () => {
         <p className="text-gray-600 mt-2">Sign in to your SWMS account</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form 
+        onSubmit={(e) => {
+          console.log('📝 Form onSubmit event triggered');
+          handleSubmit(onSubmit)(e);
+        }}
+        className="space-y-6"
+      >
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
             {error}
@@ -73,6 +103,7 @@ export const LoginForm: React.FC = () => {
               className={`input-field pl-10 ${errors.email ? 'border-red-500' : ''}`}
               placeholder="you@example.com"
               autoComplete="email"
+              onChange={(e) => console.log('📧 Email input:', e.target.value)}
             />
           </div>
           {errors.email && (
@@ -98,10 +129,14 @@ export const LoginForm: React.FC = () => {
               className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
               placeholder="••••••••"
               autoComplete="current-password"
+              onChange={(e) => console.log('🔑 Password length:', e.target.value.length)}
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => {
+                console.log('👁️ Toggle password visibility');
+                setShowPassword(!showPassword);
+              }}
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
             >
               {showPassword ? (
@@ -120,6 +155,7 @@ export const LoginForm: React.FC = () => {
         <button
           type="submit"
           disabled={isLoading}
+          onClick={() => console.log('🖱️ Submit button clicked')}
           className="w-full btn-primary flex items-center justify-center gap-2"
         >
           {isLoading ? (
